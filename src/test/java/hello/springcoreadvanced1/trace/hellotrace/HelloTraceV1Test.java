@@ -1,6 +1,6 @@
-package hello.springcoreadvanced1.app.trace.hellotrace;
+package hello.springcoreadvanced1.trace.hellotrace;
 
-import hello.springcoreadvanced1.app.trace.TraceStatus;
+import hello.springcoreadvanced1.trace.TraceStatus;
 import org.junit.jupiter.api.Test;
 
 /**

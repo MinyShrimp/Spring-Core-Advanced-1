@@ -1,4 +1,4 @@
-package hello.springcoreadvanced1.app.trace;
+package hello.springcoreadvanced1.trace;
 
 import lombok.Getter;
 
