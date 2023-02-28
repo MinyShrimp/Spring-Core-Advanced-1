@@ -1,7 +1,7 @@
 package hello.springcoreadvanced1.config;
 
-import hello.springcoreadvanced1.trace.logtrace.FieldLogTrace;
 import hello.springcoreadvanced1.trace.logtrace.LogTrace;
+import hello.springcoreadvanced1.trace.logtrace.ThreadLocalLogTrace;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -9,6 +9,6 @@ import org.springframework.context.annotation.Configuration;
 public class LogTraceConfig {
     @Bean
     public LogTrace logTrace() {
-        return new FieldLogTrace();
+        return new ThreadLocalLogTrace();
     }
 }
