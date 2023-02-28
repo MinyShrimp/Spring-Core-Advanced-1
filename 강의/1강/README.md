@@ -366,6 +366,148 @@ class HelloTraceV1Test {
 
 ## 로그 추적기 V1 - 적용
 
+### Controller V1
+
+#### OrderController V1
+
+```java
+@RestController
+@RequestMapping("/v1")
+@RequiredArgsConstructor
+public class OrderControllerV1 {
+    private final OrderServiceV1 orderService;
+    private final HelloTraceV1 trace;
+
+    @GetMapping("/request")
+    public String request(
+            @RequestParam String itemId
+    ) {
+        TraceStatus status = null;
+
+        try {
+            status = trace.begin("OrderController.request()");
+            orderService.orderItem(itemId);
+            trace.end(status);
+            return itemId;
+        } catch (Exception e) {
+            trace.exception(status, e);
+            throw e;
+        }
+    }
+}
+```
+
+#### 결과 로그
+
+```
+# 정상 호출
+[63eff67a] OrderController.request()
+[63eff67a] OrderController.request() time = 1003ms
+
+# 예외 발생
+[48f06bb2] OrderController.request()
+[48f06bb2] OrderController.request() time = 0ms ex = 예외 발생!
+```
+
+### Service, Repository V1
+
+#### OrderService V1
+
+```java
+@Service
+@RequiredArgsConstructor
+public class OrderServiceV1 {
+    private final OrderRepositoryV1 orderRepository;
+    private final HelloTraceV1 trace;
+
+    public void orderItem(String itemId) {
+        TraceStatus status = null;
+        try {
+            status = trace.begin("OrderService.orderItem()");
+            orderRepository.save(itemId);
+            trace.end(status);
+        } catch (Exception e) {
+            trace.exception(status, e);
+            throw e;
+        }
+    }
+}
+```
+
+#### OrderRepository V1
+
+```java
+@Slf4j
+@Repository
+@RequiredArgsConstructor
+public class OrderRepositoryV1 {
+
+    private final HelloTraceV1 trace;
+
+    public void save(String itemId) {
+        TraceStatus status = null;
+        try {
+            status = trace.begin("OrderRepository.save()");
+
+            // 저장 로직 시작
+            if (itemId.equals("ex")) {
+                throw new IllegalStateException("예외 발생!");
+            }
+            this.sleep(1000);
+            // 저장 로직 종료
+
+            trace.end(status);
+        } catch (Exception e) {
+            trace.exception(status, e);
+            throw e;
+        }
+
+    }
+
+    private void sleep(int millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            log.info("Thread Sleep Interrupted", e);
+        }
+    }
+}
+```
+
+#### 결과
+
+![img.png](img.png)
+
+```
+# 정상 흐름
+[e555c1ec] OrderController.request()
+[3ef0ae15] OrderService.orderItem()
+[23ba164a] OrderRepository.save()
+[23ba164a] OrderRepository.save() time = 1005ms
+[3ef0ae15] OrderService.orderItem() time = 1006ms
+[e555c1ec] OrderController.request() time = 1007ms
+
+# 예외 발생
+[c7761f63] OrderController.request()
+[8d64b8ac] OrderService.orderItem()
+[16588e83] OrderRepository.save()
+[16588e83] OrderRepository.save() time = 1ms ex = 예외 발생!
+[8d64b8ac] OrderService.orderItem() time = 1ms ex = 예외 발생!
+[c7761f63] OrderController.request() time = 1ms ex = 예외 발생!
+```
+
+### 남은 문제
+
+아직 구현하지 못한 요구사항은 메서드 호출의 깊이를 표현하고, 같은 HTTP 요청이면 같은 트랜잭션 ID를 남기는 것이다.
+이 기능은 직전 로그의 깊이와 트랜잭션 ID가 무엇인지 알아야 할 수 있는 일이다.
+
+예를 들어서 `OrderController.request()`에서 로그를 남길 때 어떤 깊이와 어떤 트랜잭션 ID를 사용했는지를
+그 다음에 로그를 남기는 `OrderService.orderItem()`에서 로그를 남길 때 알아야한다.
+
+결국 현재 로그의 상태 정보인 트랜잭션 ID 와 level 이 다음으로 전달되어야 한다.
+
+정리하면 로그에 대한 문맥(`Context`) 정보가 필요하다.
+
 ## 로그 추적기 V2 - 파라미터로 동기화 개발
 
 ## 로그 추적기 V2 - 적용
