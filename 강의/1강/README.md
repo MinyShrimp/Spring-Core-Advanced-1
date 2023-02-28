@@ -597,3 +597,125 @@ class HelloTraceV2Test {
 ```
 
 ## 로그 추적기 V2 - 적용
+
+### 예제
+
+#### OrderController V2
+
+```java
+@RestController
+@RequestMapping("/v2")
+@RequiredArgsConstructor
+public class OrderControllerV2 {
+    private final OrderServiceV2 orderService;
+    private final HelloTraceV2 trace;
+
+    @GetMapping("/request")
+    public String request(
+            @RequestParam String itemId
+    ) {
+        TraceStatus status = null;
+
+        try {
+            status = trace.begin("OrderController.request()");
+
+            // 로직 시작
+            orderService.orderItem(status.getTraceId(), itemId);
+            // 로직 종료
+
+            trace.end(status);
+            return itemId;
+        } catch (Exception e) {
+            trace.exception(status, e);
+            throw e;
+        }
+    }
+}
+```
+
+#### OrderService V2
+
+```java
+@Service
+@RequiredArgsConstructor
+public class OrderServiceV2 {
+    private final OrderRepositoryV2 orderRepository;
+    private final HelloTraceV2 trace;
+
+    public void orderItem(TraceId traceId, String itemId) {
+        TraceStatus status = null;
+        try {
+            status = trace.beginSync(traceId, "OrderService.orderItem()");
+
+            // 로직 시작
+            orderRepository.save(status.getTraceId(), itemId);
+            // 로직 종료
+
+            trace.end(status);
+        } catch (Exception e) {
+            trace.exception(status, e);
+            throw e;
+        }
+    }
+}
+```
+
+#### OrderRepository V2
+
+```java
+@Slf4j
+@Repository
+@RequiredArgsConstructor
+public class OrderRepositoryV2 {
+
+    private final HelloTraceV2 trace;
+
+    public void save(TraceId traceId, String itemId) {
+        TraceStatus status = null;
+        try {
+            status = trace.beginSync(traceId, "OrderRepository.save()");
+
+            // 로직 시작
+            if (itemId.equals("ex")) {
+                throw new IllegalStateException("예외 발생!");
+            }
+            this.sleep(1000);
+            // 로직 종료
+
+            trace.end(status);
+        } catch (Exception e) {
+            trace.exception(status, e);
+            throw e;
+        }
+
+    }
+
+    private void sleep(int millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            log.info("Thread Sleep Interrupted", e);
+        }
+    }
+}
+```
+
+### 결과
+
+```
+# 정상 흐름
+[a3960c8e] OrderController.request()
+[a3960c8e] |-->OrderService.orderItem()
+[a3960c8e] |   |-->OrderRepository.save()
+[a3960c8e] |   |<--OrderRepository.save() time = 1005ms
+[a3960c8e] |<--OrderService.orderItem() time = 1005ms
+[a3960c8e] OrderController.request() time = 1007ms
+
+# 예외 발생
+[2ba84ca2] OrderController.request()
+[2ba84ca2] |-->OrderService.orderItem()
+[2ba84ca2] |   |-->OrderRepository.save()
+[2ba84ca2] |   |<X-OrderRepository.save() time = 0ms ex = java.lang.IllegalStateException: 예외 발생!
+[2ba84ca2] |<X-OrderService.orderItem() time = 1ms ex = java.lang.IllegalStateException: 예외 발생!
+[2ba84ca2] OrderController.request() time = 2ms ex = java.lang.IllegalStateException: 예외 발생!
+```
