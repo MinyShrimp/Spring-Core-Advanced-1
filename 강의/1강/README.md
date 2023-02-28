@@ -2,6 +2,20 @@
 
 ## 프로젝트 생성
 
+### Spring initializer
+
+* https://start.spring.io/
+* 프로젝트 선택
+    * Project: Gradle - Groovy
+    * Language: Java 17
+    * Spring Boot: 3.0.3
+* Project Metadata
+    * Group: hello
+    * Artifact: spring-core-advanced-1
+    * Packaging: Jar
+* Dependencies
+    * Spring Web, Lombok
+
 ## 예제 프로젝트 만들기 - V0
 
 ## 로그 추적기 - 요구사항 분석
