@@ -117,7 +117,7 @@ public class OrderControllerV0 {
 * 메서드 호출의 깊이 표현
 * HTTP 요청을 구분
     * HTTP 요청 단위로 특정 ID를 남겨서 어떤 HTTP 요청에서 시작된 것인지 명확하게 구분이 가능해야 함
-    * 트랜잭션 ID (DB 트랜잭션X), 여기서는 하나의 HTTP 요청이 시작해서 끝날 때 까지를 하나의 트랜잭션이라 함
+    * 트랜잭션 ID (DB 트랜잭션 X), 여기서는 하나의 HTTP 요청이 시작해서 끝날 때 까지를 하나의 트랜잭션이라 함
 
 #### 예시
 
@@ -140,6 +140,229 @@ public class OrderControllerV0 {
 ```
 
 ## 로그 추적기 V1 - 프로토타입 개발
+
+### 프로토타입 개발
+
+애플리케이션의 모든 로직에 직접 로그를 남겨도 되지만, 그것보다는 더 효율적인 개발 방법이 필요하다.
+특히 트랜잭션ID와 깊이를 표현하는 방법은 기존 정보를 이어 받아야 하기 때문에 단순히 로그만 남긴다고 해결할 수 있는 것은 아니다.
+
+요구사항에 맞추어 애플리케이션에 효과적으로 로그를 남기기 위한 로그 추적기를 개발해보자.
+먼저 프로토타입 버전을 개발해보자. 아마 코드를 모두 작성하고 테스트 코드까지 실행해보아야 어떤 것을 하는지 감이 올 것이다.
+
+### 예제
+
+#### TraceId
+
+```java
+/**
+ * 로그 추적기의 트랜잭션 ID와 깊이 표현
+ */
+@Getter
+public class TraceId {
+    /**
+     * 현재 Trace의 UUID
+     */
+    private final String id;
+
+    /**
+     * 현재 Trace의 깊이
+     */
+    private final int level;
+
+    /**
+     * 새로운 Trace 생성
+     */
+    public TraceId() {
+        this.id = this.createId();
+        this.level = 0;
+    }
+
+    /**
+     * 내부 호출용 생성자
+     */
+    private TraceId(String ID, int LEVEL) {
+        this.id = ID;
+        this.level = LEVEL;
+    }
+
+    /**
+     * 새로운 UUID 생성
+     */
+    private String createId() {
+        return UUID.randomUUID().toString().substring(0, 8);
+    }
+
+    /**
+     * @return 다음 LEVEL Trace
+     */
+    public TraceId createNextId() {
+        return new TraceId(id, level + 1);
+    }
+
+    /**
+     * @return 이전 LEVEL Trace
+     */
+    public TraceId createPreviousId() {
+        return new TraceId(id, level - 1);
+    }
+
+    /**
+     * @return LEVEL == 0
+     */
+    public boolean isFirstLevel() {
+        return level == 0;
+    }
+}
+```
+
+#### TraceStatus
+
+```java
+/**
+ * 로그 상태 정보
+ */
+@Getter
+public class TraceStatus {
+    /**
+     * 최초 Trace
+     */
+    private final TraceId traceId;
+
+    /**
+     * 시작 시간
+     */
+    private final Long startTimeMs;
+
+    /**
+     * 최근 로그 메시지
+     */
+    private final String message;
+
+    /**
+     * @param traceId     최초 Trace
+     * @param startTimeMs 시작 시간
+     * @param message     로그 메시지
+     */
+    public TraceStatus(TraceId traceId, Long startTimeMs, String message) {
+        this.traceId = traceId;
+        this.startTimeMs = startTimeMs;
+        this.message = message;
+    }
+}
+```
+
+#### HelloTrace V1
+
+```java
+@Slf4j
+@Component
+public class HelloTraceV1 {
+    private static final String START_PREFIX = "-->";
+    private static final String COMPLETE_PREFIX = "<--";
+    private static final String EX_PREFIX = "<X-";
+
+    /**
+     * Trace Level 에 따라 공간을 확보하는 메서드
+     * <p>- LEVEL 0: </p>
+     * <p>- LEVEL 1: |--></p>
+     * <p>- LEVEL 2: |   |--></p>
+     *
+     * @param prefix 적용할 접두사
+     * @param level  현재 Trace Level
+     */
+    private static String addSpace(String prefix, int level) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < level; i++) {
+            sb.append((i == level - 1) ? "|" + prefix : "|   ");
+        }
+        return sb.toString();
+    }
+
+    /**
+     * 새로운 Trace 시작
+     *
+     * @param message 로그 메시지
+     * @return {@link TraceStatus}
+     */
+    public TraceStatus begin(String message) {
+        TraceId traceId = new TraceId();
+        Long startTimeMs = System.currentTimeMillis();
+        log.info("[{}] {}{}", traceId.getId(), addSpace(START_PREFIX, traceId.getLevel()), message);
+
+        return new TraceStatus(traceId, startTimeMs, message);
+    }
+
+    /**
+     * 현재 Trace 종료
+     * - 일반 종료
+     *
+     * @param status {@link TraceStatus}
+     */
+    public void end(TraceStatus status) {
+        complete(status, null);
+    }
+
+    /**
+     * 현재 Trace 종료
+     * - 예외 발생
+     *
+     * @param status {@link TraceStatus}
+     * @param e      발생한 예외
+     */
+    public void exception(TraceStatus status, Exception e) {
+        complete(status, e);
+    }
+
+    /**
+     * 현재 Trace가 종료됨에 따라 로그를 출력하기 위함
+     *
+     * @param status {@link TraceStatus}
+     * @param e      발생한 예외
+     */
+    private void complete(TraceStatus status, Exception e) {
+        Long stopTimeMs = System.currentTimeMillis();
+        long resultTimeMs = stopTimeMs - status.getStartTimeMs();
+        TraceId traceId = status.getTraceId();
+
+        if (e == null) {
+            log.info("[{}] {}{} time = {}ms",
+                    traceId.getId(),
+                    addSpace(COMPLETE_PREFIX, traceId.getLevel()),
+                    status.getMessage(), resultTimeMs
+            );
+        } else {
+            log.info("[{}] {}{} time = {}ms ex = {}",
+                    traceId.getId(),
+                    addSpace(EX_PREFIX, traceId.getLevel()),
+                    status.getMessage(), resultTimeMs, e.getMessage()
+            );
+        }
+    }
+}
+```
+
+#### HelloTrace V1 Test
+
+```java
+/**
+ * {@link HelloTraceV1} Test
+ */
+class HelloTraceV1Test {
+    @Test
+    void begin_end() {
+        HelloTraceV1 trace = new HelloTraceV1();
+        TraceStatus status = trace.begin("hello");
+        trace.end(status);
+    }
+
+    @Test
+    void begin_exception() {
+        HelloTraceV1 trace = new HelloTraceV1();
+        TraceStatus status = trace.begin("hello");
+        trace.exception(status, new IllegalStateException());
+    }
+}
+```
 
 ## 로그 추적기 V1 - 적용
 
