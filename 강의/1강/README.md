@@ -719,3 +719,15 @@ public class OrderRepositoryV2 {
 [2ba84ca2] |<X-OrderService.orderItem() time = 1ms ex = java.lang.IllegalStateException: 예외 발생!
 [2ba84ca2] OrderController.request() time = 2ms ex = java.lang.IllegalStateException: 예외 발생!
 ```
+
+## 정리
+
+### 남은 문제
+
+* HTTP 요청을 구분하고 깊이를 표현하기 위해서 `TraceId` 동기화가 필요하다.
+* `TraceId`의 동기화를 위해서 관련 메서드의 모든 파라미터를 수정해야 한다.
+    * 만약 인터페이스가 있다면 인터페이스까지 모두 고쳐야 하는 상황이다.
+* 로그를 처음 시작할 때는 `begin()`을 호출하고, 처음이 아닐때는 `beginSync()`를 호출해야 한다.
+    * 만약에 컨트롤러를 통해서 서비스를 호출하는 것이 아니라, 다른 곳에서 서비스를 처음으로 호출하는 상황이라면 파리미터로 넘길 `TraceId`가 없다.
+
+HTTP 요청을 구분하고 깊이를 표현하기 위해서 TraceId 를 파라미터로 넘기는 것 말고 다른 대안은 없을까?
