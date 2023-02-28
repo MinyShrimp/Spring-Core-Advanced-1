@@ -510,4 +510,90 @@ public class OrderRepositoryV1 {
 
 ## 로그 추적기 V2 - 파라미터로 동기화 개발
 
+### 예제
+
+#### HelloTrace V2
+
+```java
+@Slf4j
+@Component
+public class HelloTraceV2 {
+    // ...
+
+    /**
+     * V2 추가<br>
+     * 두 번째 이후 Trace
+     *
+     * @param beforeTraceId 이전 Trace
+     * @param message       로그 메시지
+     * @return {@link TraceStatus}
+     */
+    public TraceStatus beginSync(TraceId beforeTraceId, String message) {
+        return beginTrace(beforeTraceId.createNextId(), message);
+    }
+
+    /**
+     * V2 추가<br>
+     * {@link #begin}, {@link #beginSync} 에서 사용
+     */
+    private TraceStatus beginTrace(TraceId trace, String message) {
+        Long startTimeMs = System.currentTimeMillis();
+        log.info("[{}] {}{}", trace.getId(), addSpace(START_PREFIX, trace.getLevel()), message);
+
+        return new TraceStatus(trace, startTimeMs, message);
+    }
+    
+    // ...
+}
+```
+
+### 테스트
+
+#### HelloTrace V2 Test
+
+```java
+/**
+ * {@link HelloTraceV2} Test
+ */
+class HelloTraceV2Test {
+    @Test
+    void begin_end() {
+        HelloTraceV2 trace = new HelloTraceV2();
+
+        TraceStatus status1 = trace.begin("hello");
+        TraceStatus status2 = trace.beginSync(status1.getTraceId(), "world");
+
+        trace.end(status2);
+        trace.end(status1);
+    }
+
+    @Test
+    void begin_exception() {
+        HelloTraceV2 trace = new HelloTraceV2();
+
+        TraceStatus status1 = trace.begin("hello");
+        TraceStatus status2 = trace.beginSync(status1.getTraceId(), "world");
+
+        trace.exception(status2, new IllegalStateException());
+        trace.exception(status1, new IllegalStateException());
+    }
+}
+```
+
+#### 결과 로그
+
+```
+# 정상 흐름
+[7adf7cac] hello
+[7adf7cac] |-->world
+[7adf7cac] |<--world time = 0ms
+[7adf7cac] hello time = 0ms
+
+# 예외 발생
+[5b43ac91] hello
+[5b43ac91] |-->world
+[5b43ac91] |<X-world time = 0ms ex = java.lang.IllegalStateException
+[5b43ac91] hello time = 4ms ex = java.lang.IllegalStateException
+```
+
 ## 로그 추적기 V2 - 적용

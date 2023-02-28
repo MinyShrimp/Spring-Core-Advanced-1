@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class HelloTraceV1 {
+public class HelloTraceV2 {
     private static final String START_PREFIX = "-->";
     private static final String COMPLETE_PREFIX = "<--";
     private static final String EX_PREFIX = "<X-";
@@ -30,17 +30,36 @@ public class HelloTraceV1 {
     }
 
     /**
-     * 새로운 Trace 시작
+     * 첫 번째 Trace
      *
      * @param message 로그 메시지
      * @return {@link TraceStatus}
      */
     public TraceStatus begin(String message) {
-        TraceId traceId = new TraceId();
-        Long startTimeMs = System.currentTimeMillis();
-        log.info("[{}] {}{}", traceId.getId(), addSpace(START_PREFIX, traceId.getLevel()), message);
+        return beginTrace(new TraceId(), message);
+    }
 
-        return new TraceStatus(traceId, startTimeMs, message);
+    /**
+     * V2 추가<br>
+     * 두 번째 이후 Trace
+     *
+     * @param beforeTraceId 이전 Trace
+     * @param message       로그 메시지
+     * @return {@link TraceStatus}
+     */
+    public TraceStatus beginSync(TraceId beforeTraceId, String message) {
+        return beginTrace(beforeTraceId.createNextId(), message);
+    }
+
+    /**
+     * V2 추가<br>
+     * {@link #begin}, {@link #beginSync} 에서 사용
+     */
+    private TraceStatus beginTrace(TraceId trace, String message) {
+        Long startTimeMs = System.currentTimeMillis();
+        log.info("[{}] {}{}", trace.getId(), addSpace(START_PREFIX, trace.getLevel()), message);
+
+        return new TraceStatus(trace, startTimeMs, message);
     }
 
     /**
