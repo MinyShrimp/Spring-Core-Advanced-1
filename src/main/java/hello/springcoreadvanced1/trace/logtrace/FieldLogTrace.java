@@ -1,44 +1,9 @@
-# 쓰레드 로컬 - ThreadLocal
+package hello.springcoreadvanced1.trace.logtrace;
 
-## 필드 동기화 - 개발
+import hello.springcoreadvanced1.trace.TraceId;
+import hello.springcoreadvanced1.trace.TraceStatus;
+import lombok.extern.slf4j.Slf4j;
 
-### 예제
-
-#### LogTrace
-
-```java
-/**
- * LogTrace Interface
- */
-public interface LogTrace {
-    /**
-     * 해당 객체가 시작할때 호출
-     *
-     * @param message 메시지
-     * @return {@link TraceStatus}
-     */
-    TraceStatus begin(String message);
-
-    /**
-     * 정상 종료시 호출
-     *
-     * @param status {@link TraceStatus}
-     */
-    void end(TraceStatus status);
-
-    /**
-     * 예외 발생시 호출
-     *
-     * @param status {@link TraceStatus}
-     * @param e      발생한 예외
-     */
-    void exception(TraceStatus status, Exception e);
-}
-```
-
-#### FieldLogTrace
-
-```java
 @Slf4j
 public class FieldLogTrace implements LogTrace {
     private static final String START_PREFIX = "-->";
@@ -142,65 +107,3 @@ public class FieldLogTrace implements LogTrace {
         complete(status, e);
     }
 }
-```
-
-#### FieldLogTraceTest
-
-```java
-/**
- * {@link FieldLogTrace} Test
- */
-class FieldLogTraceTest {
-
-    FieldLogTrace trace = new FieldLogTrace();
-
-    @Test
-    void begin_end_level2() {
-        TraceStatus status1 = trace.begin("hello");
-        TraceStatus status2 = trace.begin("world");
-
-        trace.end(status2);
-        trace.end(status1);
-    }
-
-    @Test
-    void begin_exception_level2() {
-        TraceStatus status1 = trace.begin("hello");
-        TraceStatus status2 = trace.begin("world");
-
-        trace.exception(status2, new IllegalStateException());
-        trace.exception(status1, new IllegalStateException());
-    }
-
-}
-```
-
-### 테스트 결과
-
-```
-# 정상 결과
-[7d92ba2e] hello
-[7d92ba2e] |-->world
-[7d92ba2e] |<--world time = 0ms
-[7d92ba2e] hello time = 4ms
-
-# 예외 발생
-[ce39a554] hello
-[ce39a554] |-->world
-[ce39a554] |<X-world time = 0ms ex = java.lang.IllegalStateException
-[ce39a554] hello time = 0ms ex = java.lang.IllegalStateException
-```
-
-## 필드 동기화 - 적용
-
-## 필드 동기화 - 동시성 문제
-
-## ThreadLocal - 소개
-
-## ThreadLocal - 예제 코드
-
-## 쓰레드 로컬 동기화 - 개발
-
-## 쓰레드 로컬 동기화 - 적용
-
-## 쓰레드 로컬 - 주의사항
