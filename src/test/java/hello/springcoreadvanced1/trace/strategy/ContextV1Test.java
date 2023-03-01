@@ -1,9 +1,9 @@
 package hello.springcoreadvanced1.trace.strategy;
 
-import hello.springcoreadvanced1.trace.strategy.code.strategy.ContextV1;
-import hello.springcoreadvanced1.trace.strategy.code.strategy.Strategy;
-import hello.springcoreadvanced1.trace.strategy.code.strategy.StrategyLogic1;
-import hello.springcoreadvanced1.trace.strategy.code.strategy.StrategyLogic2;
+import hello.springcoreadvanced1.trace.strategy.code.ContextV1;
+import hello.springcoreadvanced1.trace.strategy.code.Strategy;
+import hello.springcoreadvanced1.trace.strategy.code.StrategyLogic1;
+import hello.springcoreadvanced1.trace.strategy.code.StrategyLogic2;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 

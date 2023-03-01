@@ -1,4 +1,4 @@
-package hello.springcoreadvanced1.trace.strategy.code.strategy;
+package hello.springcoreadvanced1.trace.strategy.code;
 
 import lombok.extern.slf4j.Slf4j;
 

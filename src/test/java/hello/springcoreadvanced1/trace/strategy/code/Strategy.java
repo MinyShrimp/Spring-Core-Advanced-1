@@ -1,4 +1,4 @@
-package hello.springcoreadvanced1.trace.strategy.code.strategy;
+package hello.springcoreadvanced1.trace.strategy.code;
 
 /**
  * 전략 패턴 인터페이스
