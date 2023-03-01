@@ -26,6 +26,58 @@
 
 ## 템플릿 메서드 패턴 - 예제 1
 
+### 예제
+
+#### TemplateMethodTest
+
+```java
+@Slf4j
+public class TemplateMethodTest {
+
+    @Test
+    void templateMethodV0() {
+        logic1();
+        logic2();
+    }
+
+    private void logic1() {
+        long startTime = System.currentTimeMillis();
+
+        log.info("비즈니스 로직 1 실행");
+
+        long endTime = System.currentTimeMillis();
+        long resultTime = endTime - startTime;
+        log.info("resultTime = {}", resultTime);
+    }
+
+    private void logic2() {
+        long startTime = System.currentTimeMillis();
+
+        log.info("비즈니스 로직 2 실행");
+
+        long endTime = System.currentTimeMillis();
+        long resultTime = endTime - startTime;
+        log.info("resultTime = {}", resultTime);
+    }
+}
+```
+
+#### 실행 결과
+
+```
+비즈니스 로직 1 실행
+resultTime = 2
+비즈니스 로직 2 실행
+resultTime = 0
+```
+
+### 분석
+
+* 변하는 부분: 비즈니스 로직
+* 변하지 않는 부분: 시간 측정
+
+이제 이 둘을 분리해보자.
+
 ## 템플릿 메서드 패턴 - 예제 2
 
 ## 템플릿 메서드 패턴 - 예제 3
