@@ -738,6 +738,103 @@ ContextV1     - resultTime = [0ms]
 
 ## 전략 패턴 - 예제 3
 
+### 파라미터로 전달
+
+#### Context V2
+
+```java
+/**
+ * 전략을 파라미터로 전달받는 방식
+ */
+@Slf4j
+public class ContextV2 {
+
+    public void execute(Strategy strategy) {
+        long startTime = System.currentTimeMillis();
+
+        strategy.call();
+
+        long endTime = System.currentTimeMillis();
+        long resultTime = endTime - startTime;
+        log.info("resultTime = [{}ms]", resultTime);
+    }
+}
+```
+
+### 테스트 코드
+
+#### Context V2 Test
+
+```java
+/**
+ * {@link Strategy}, {@link ContextV2} Test
+ */
+@Slf4j
+public class ContextV2Test {
+
+    /**
+     * 전략 패턴 사용
+     */
+    @Test
+    void strategyV1() {
+        ContextV2 context = new ContextV2();
+        context.execute(new StrategyLogic1());
+        context.execute(new StrategyLogic2());
+    }
+
+    /**
+     * 전략 패턴, 익명 내부 클래스 사용
+     */
+    @Test
+    void strategyV2() {
+        ContextV2 context = new ContextV2();
+        context.execute(new Strategy() {
+            @Override
+            public void call() {
+                log.info("비즈니스 로직 1 실행");
+            }
+        });
+        context.execute(new Strategy() {
+            @Override
+            public void call() {
+                log.info("비즈니스 로직 2 실행");
+            }
+        });
+    }
+
+    /**
+     * 전략 패턴, 람다 사용
+     */
+    @Test
+    void strategyV3() {
+        ContextV2 context = new ContextV2();
+        context.execute(() -> log.info("비즈니스 로직 1 실행"));
+        context.execute(() -> log.info("비즈니스 로직 2 실행"));
+    }
+}
+```
+
+#### 테스트 결과
+
+```
+StrategyLogic1 - 비즈니스 로직 1 실행
+ContextV2      - resultTime = [2ms]
+StrategyLogic2 - 비즈니스 로직 2 실행
+ContextV2      - resultTime = [0ms]
+```
+
+### 전략 패턴 파라미터 실행 그림
+
+![img_6.png](img_6.png)
+
+### 정리
+
+전략 패턴 방식은 선조립, 후실행 방법이다.
+`Context`를 실행하는 시점에는 이미 조립이 끝났기 때문에 전략을 신경쓰지 않고 단순히 실행만 하면 된다.
+
+파라미터로 전달하여 후조립 방식으로 바꾸게 되면,
+`Context`를 실행하는 시점에 전략을 계속 지정해주어야 한다.
+
 ## 템플릿 콜백 패턴 - 시작
 
 ## 템플릿 콜백 패턴 - 예제
