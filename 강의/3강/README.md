@@ -866,4 +866,97 @@ ContextV2      - resultTime = [0ms]
 * `Context` -> `Template`
 * `Strategy` -> `Callback`
 
+### 예제
+
+#### Callback
+
+```java
+/**
+ * 템플릿 콜백 패턴 - 콜백
+ */
+@FunctionalInterface
+public interface Callback {
+
+    /**
+     * 비즈니스 로직
+     */
+    void call();
+}
+```
+
+#### TimeLogTemplate
+
+```java
+/**
+ * 템플릿 콜백 패턴 - 템플릿
+ */
+@Slf4j
+public class TimeLogTemplate {
+
+    public void execute(Callback callback) {
+        long startTime = System.currentTimeMillis();
+
+        callback.call();
+
+        long endTime = System.currentTimeMillis();
+        long resultTime = endTime - startTime;
+        log.info("resultTime = [{}ms]", resultTime);
+    }
+}
+```
+
+### 테스트
+
+#### TemplateCallbackTest
+
+```java
+/**
+ * {@link Callback}, {@link TimeLogTemplate} Test
+ */
+@Slf4j
+public class TemplateCallbackTest {
+
+    /**
+     * 템플릿 콜백 패턴 - 익명 내부 클래스
+     */
+    @Test
+    void callbackV1() {
+        TimeLogTemplate template = new TimeLogTemplate();
+        template.execute(new Callback() {
+            @Override
+            public void call() {
+                log.info("비즈니스 로직 1 실행");
+            }
+        });
+
+        template.execute(new Callback() {
+            @Override
+            public void call() {
+                log.info("비즈니스 로직 2 실행");
+            }
+        });
+    }
+
+    /**
+     * 템플릿 콜백 패턴 - 람다
+     */
+    @Test
+    void callbackV2() {
+        TimeLogTemplate template = new TimeLogTemplate();
+        template.execute(() -> log.info("비즈니스 로직 1 실행"));
+        template.execute(() -> log.info("비즈니스 로직 2 실행"));
+    }
+}
+```
+
+#### 결과
+
+```
+TemplateCallbackTest - 비즈니스 로직 1 실행
+TimeLogTemplate      - resultTime = [2ms]
+TemplateCallbackTest - 비즈니스 로직 2 실행
+TimeLogTemplate      - resultTime = [0ms]
+
+```
+
 ## 템플릿 콜백 패턴 - 적용
