@@ -960,3 +960,156 @@ TimeLogTemplate      - resultTime = [0ms]
 ```
 
 ## 템플릿 콜백 패턴 - 적용
+
+### 예제
+
+#### TraceCallback
+
+```java
+/**
+ * 템플릿 콜백 패턴 - 콜백
+ */
+public interface TraceCallback<T> {
+
+    /**
+     * 비즈니스 로직
+     */
+    T call();
+}
+```
+
+#### TraceTemplate
+
+```java
+/**
+ * 템플릿 콜백 패턴 - 템플릿
+ */
+public class TraceTemplate {
+    private final LogTrace trace;
+
+    public TraceTemplate(LogTrace trace) {
+        this.trace = trace;
+    }
+
+    public <T> T execute(String message, TraceCallback<T> callback) {
+        TraceStatus status = null;
+
+        try {
+            status = trace.begin(message);
+
+            T result = callback.call();
+
+            trace.end(status);
+            return result;
+        } catch (Exception e) {
+            trace.exception(status, e);
+            throw e;
+        }
+    }
+}
+```
+
+### MVC
+
+#### OrderController V5
+
+```java
+@RestController
+@RequestMapping("/v5")
+public class OrderControllerV5 {
+    private final OrderServiceV5 orderService;
+    private final TraceTemplate template;
+
+    public OrderControllerV5(OrderServiceV5 orderService, LogTrace logTrace) {
+        this.orderService = orderService;
+        this.template = new TraceTemplate(logTrace);
+    }
+
+    @GetMapping("/request")
+    public String request(
+            @RequestParam String itemId
+    ) {
+        return template.execute(
+                "OrderController.request()",
+                () -> {
+                    orderService.orderItem(itemId);
+                    return itemId;
+                }
+        );
+    }
+}
+```
+
+#### OrderService V5
+
+```java
+@Service
+public class OrderServiceV5 {
+    private final OrderRepositoryV5 orderRepository;
+    private final TraceTemplate template;
+
+    public OrderServiceV5(OrderRepositoryV5 orderRepository, LogTrace logTrace) {
+        this.orderRepository = orderRepository;
+        this.template = new TraceTemplate(logTrace);
+    }
+
+    public void orderItem(String itemId) {
+        template.execute(
+                "OrderService.orderItem()",
+                () -> {
+                    orderRepository.save(itemId);
+                    return null;
+                }
+        );
+    }
+}
+```
+
+#### OrderRepository V5
+
+```java
+@Slf4j
+@Repository
+public class OrderRepositoryV5 {
+
+    private final TraceTemplate template;
+
+    public OrderRepositoryV5(LogTrace logTrace) {
+        this.template = new TraceTemplate(logTrace);
+    }
+
+    public void save(String itemId) {
+        template.execute(
+                "OrderRepository.save()",
+                () -> {
+                    if (itemId.equals("ex")) {
+                        throw new IllegalStateException("예외 발생!");
+                    }
+                    sleep(1000);
+                    return null;
+                }
+        );
+    }
+
+    private void sleep(int millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            log.info("Thread Sleep Interrupted", e);
+        }
+    }
+}
+```
+
+### 실행
+
+* http://localhost:8080/v5/request?itemId=hello
+
+```
+ThreadLocalLogTrace   : [966e02dc] OrderController.request()
+ThreadLocalLogTrace   : [966e02dc] |-->OrderService.orderItem()
+ThreadLocalLogTrace   : [966e02dc] |   |-->OrderRepository.save()
+ThreadLocalLogTrace   : [966e02dc] |   |<--OrderRepository.save() time = 1003ms
+ThreadLocalLogTrace   : [966e02dc] |<--OrderService.orderItem() time = 1004ms
+ThreadLocalLogTrace   : [966e02dc] OrderController.request() time = 1004ms
+```
