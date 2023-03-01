@@ -5,6 +5,7 @@
 * 깃헙:
     * https://github.com/MinyShrimp/Spring-Core-Advanced-1
     * https://github.com/MinyShrimp/Spring-Core-Advanced-2
+    * https://github.com/MinyShrimp/Spring-Core-Advanced-3
 
 ## [예제 만들기](강의/1강)
 
