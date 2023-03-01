@@ -479,6 +479,127 @@ ContextV1Test - resultTime = 0
 
 ## 전략 패턴 - 예제 1
 
+### 전략 패턴?
+
+![img_4.png](img_4.png)
+
+전략 패턴은 변하지 않는 부분을 `Context`라는 곳에 두고,
+변하는 부분을 `Strategy`라는 인터페이스를 만들고 해당 인터페이스를 구현하도록 해서 문제를 해결한다.
+상속이 아니라 위임으로 문제를 해결하는 것이다.
+
+전략 패턴에서 `Context`는 변하지 않는 템플릿 역할을 하고, `Strategy`는 변하는 알고리즘 역할을 한다.
+
+#### GOF 디자인 패턴에서 정의한 전략 패턴
+
+> 알고리즘 제품군을 정의하고 각각을 캡슐화하여 상호 교환 가능하게 만들자.
+> 전략을 사용하면 알고리즘을 사용하는 클라이언트와 독립적으로 알고리즘을 변경할 수 있다.
+
+### 예제
+
+#### Strategy
+
+```java
+/**
+ * 전략 패턴 인터페이스
+ */
+public interface Strategy {
+
+    /**
+     * 비즈니스 로직
+     */
+    void call();
+}
+```
+
+#### StrategyLogic1
+
+```java
+/**
+ * 전략 패턴을 구현한 비즈니스 로직
+ */
+@Slf4j
+public class StrategyLogic1 implements Strategy {
+    @Override
+    public void call() {
+        log.info("비즈니스 로직 1 실행");
+    }
+}
+```
+
+#### StrategyLogic2
+
+```java
+/**
+ * 전략 패턴을 구현한 비즈니스 로직
+ */
+@Slf4j
+public class StrategyLogic2 implements Strategy {
+    @Override
+    public void call() {
+        log.info("비즈니스 로직 2 실행");
+    }
+}
+```
+
+#### ContextV1
+
+```java
+/**
+ * 필드에 전략을 보관하는 방식
+ */
+@Slf4j
+public class ContextV1 {
+    private final Strategy strategy;
+
+    public ContextV1(Strategy strategy) {
+        this.strategy = strategy;
+    }
+
+    public void execute() {
+        long startTime = System.currentTimeMillis();
+
+        strategy.call();
+
+        long endTime = System.currentTimeMillis();
+        long resultTime = endTime - startTime;
+        log.info("resultTime = [{}ms]", resultTime);
+    }
+}
+```
+
+### 테스트
+
+#### ContextV1Test
+
+```java
+/**
+ * 전략 패턴 사용
+ */
+@Test
+void strategyV1() {
+    Strategy strategyLogic1 = new StrategyLogic1();
+    ContextV1 context1 = new ContextV1(strategyLogic1);
+    context1.execute();
+
+    Strategy strategyLogic2 = new StrategyLogic2();
+    ContextV1 context2 = new ContextV1(strategyLogic2);
+    context2.execute();
+}
+```
+
+#### 결과
+
+```
+StrategyLogic1 - 비즈니스 로직 1 실행
+ContextV1      - resultTime = [2ms]
+StrategyLogic2 - 비즈니스 로직 2 실행
+ContextV1      - resultTime = [0ms]
+```
+
+### 전략 패턴 실행 그림
+
+![img_5.png](img_5.png)
+
 ## 전략 패턴 - 예제 2
 
 ## 전략 패턴 - 예제 3
