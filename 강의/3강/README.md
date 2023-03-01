@@ -182,6 +182,52 @@ AbstractTemplate - resultTime = 0
 
 ## 템플릿 메서드 패턴 - 예제 3
 
+### 익명 내부 클래스 사용하기
+
+![img_2.png](img_2.png)
+
+### 예제
+
+#### TemplateMethodTest
+
+```java
+/**
+ * 템플릿 메서드 패턴, 익명 내부 클래스 사용
+ */
+@Test
+void templateMethodV2() {
+    AbstractTemplate template1 = new AbstractTemplate() {
+        @Override
+        protected void call() {
+            log.info("비즈니스 로직 1 실행");
+        }
+    };
+    log.info("클래스 이름 1 = {}", template1.getClass());
+    template1.execute();
+
+    AbstractTemplate template2 = new AbstractTemplate() {
+        @Override
+        protected void call() {
+            log.info("비즈니스 로직 2 실행");
+        }
+    };
+    log.info("클래스 이름 2 = {}", template2.getClass());
+    template2.execute();
+}
+```
+
+#### 실행 결과
+
+```
+TemplateMethodTest - 클래스 이름 1 = class hello.springcoreadvanced1.trace.template.TemplateMethodTest$1
+TemplateMethodTest - 비즈니스 로직 1 실행
+AbstractTemplate   - resultTime = 0
+
+TemplateMethodTest - 클래스 이름 2 = class hello.springcoreadvanced1.trace.template.TemplateMethodTest$2
+TemplateMethodTest - 비즈니스 로직 2 실행
+AbstractTemplate   - resultTime = 0
+```
+
 ## 템플릿 메서드 패턴 - 적용 1
 
 ## 템플릿 메서드 패턴 - 적용 2
