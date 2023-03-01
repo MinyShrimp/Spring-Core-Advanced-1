@@ -861,4 +861,9 @@ ContextV2      - resultTime = [0ms]
 
 ## 템플릿 콜백 패턴 - 예제
 
+### 전략 패턴 -> 템플릿 콜백 패턴
+
+* `Context` -> `Template`
+* `Strategy` -> `Callback`
+
 ## 템플릿 콜백 패턴 - 적용
