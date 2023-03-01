@@ -430,6 +430,53 @@ UML에서 상속을 받으면 삼각형 화살표가 자식 -> 부모 를 향하
 
 ## 전략 패턴 - 시작
 
+### 이전 테스트 복사
+
+#### Context V1 Test
+
+```java
+@Slf4j
+public class ContextV1Test {
+    /**
+     * 일반 메서드
+     */
+    @Test
+    void strategyV0() {
+        logic1();
+        logic2();
+    }
+
+    private void logic1() {
+        long startTime = System.currentTimeMillis();
+
+        log.info("비즈니스 로직 1 실행");
+
+        long endTime = System.currentTimeMillis();
+        long resultTime = endTime - startTime;
+        log.info("resultTime = {}", resultTime);
+    }
+
+    private void logic2() {
+        long startTime = System.currentTimeMillis();
+
+        log.info("비즈니스 로직 2 실행");
+
+        long endTime = System.currentTimeMillis();
+        long resultTime = endTime - startTime;
+        log.info("resultTime = {}", resultTime);
+    }
+}
+```
+
+#### 결과
+
+```
+ContextV1Test - 비즈니스 로직 1 실행
+ContextV1Test - resultTime = 2
+ContextV1Test - 비즈니스 로직 2 실행
+ContextV1Test - resultTime = 0
+```
+
 ## 전략 패턴 - 예제 1
 
 ## 전략 패턴 - 예제 2
