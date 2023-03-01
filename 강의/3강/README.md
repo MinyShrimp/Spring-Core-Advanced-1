@@ -230,6 +230,144 @@ AbstractTemplate   - resultTime = 0
 
 ## 템플릿 메서드 패턴 - 적용 1
 
+### AbstractTemplate
+
+```java
+public abstract class AbstractTemplate<T> {
+    private final LogTrace trace;
+
+    public AbstractTemplate(LogTrace trace) {
+        this.trace = trace;
+    }
+
+    public T execute(String message) {
+        TraceStatus status = null;
+
+        try {
+            status = trace.begin(message);
+
+            T result = this.call();
+
+            trace.end(status);
+            return result;
+        } catch (Exception e) {
+            trace.exception(status, e);
+            throw e;
+        }
+    }
+
+    protected abstract T call();
+}
+```
+
+* `AbstractTemplate`은 템플릿 메서드 패턴에서 부모 클래스이고, 템플릿 역할을 한다.
+* `<T>` 제네릭을 사용했다. 반환 타입을 정의한다.
+* 객체를 생성할 때 내부에서 사용할 `LogTrace trace`를 전달 받는다.
+* 로그에 출력할 `message`를 외부에서 파라미터로 전달받는다.
+* 템플릿 코드 중간에 `call()` 메서드를 통해서 변하는 부분을 처리한다.
+* `abstract T call()`은 변하는 부분을 처리하는 메서드이다. 이 부분은 상속으로 구현해야 한다.
+
+### MVC
+
+#### OrderController V4
+
+```java
+@RestController
+@RequestMapping("/v4")
+@RequiredArgsConstructor
+public class OrderControllerV4 {
+    private final OrderServiceV4 orderService;
+    private final LogTrace trace;
+
+    @GetMapping("/request")
+    public String request(
+            @RequestParam String itemId
+    ) {
+        AbstractTemplate<String> abstractTemplate = new AbstractTemplate<>(trace) {
+            @Override
+            protected String call() {
+                orderService.orderItem(itemId);
+                return itemId;
+            }
+        };
+
+        return abstractTemplate.execute("OrderController.request()");
+    }
+}
+```
+
+#### OrderService V4
+
+```java
+@Service
+@RequiredArgsConstructor
+public class OrderServiceV4 {
+    private final OrderRepositoryV4 orderRepository;
+    private final LogTrace trace;
+
+    public void orderItem(String itemId) {
+        AbstractTemplate<Void> abstractTemplate = new AbstractTemplate<>(trace) {
+            @Override
+            protected Void call() {
+                orderRepository.save(itemId);
+                return null;
+            }
+        };
+
+        abstractTemplate.execute("OrderService.orderItem()");
+    }
+}
+```
+
+#### OrderRepository V4
+
+```java
+@Slf4j
+@Repository
+@RequiredArgsConstructor
+public class OrderRepositoryV4 {
+
+    private final LogTrace trace;
+
+    public void save(String itemId) {
+        AbstractTemplate<Void> abstractTemplate = new AbstractTemplate<>(trace) {
+            @Override
+            protected Void call() {
+                if (itemId.equals("ex")) {
+                    throw new IllegalStateException("예외 발생!");
+                }
+                sleep(1000);
+
+                return null;
+            }
+        };
+
+        abstractTemplate.execute("OrderRepository.save()");
+    }
+
+    private void sleep(int millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            log.info("Thread Sleep Interrupted", e);
+        }
+    }
+}
+```
+
+### 실행 결과
+
+* http://localhost:8080/v4/request?itemId=hello
+
+```
+h.s.trace.logtrace.ThreadLocalLogTrace   : [cb94011b] OrderController.request()
+h.s.trace.logtrace.ThreadLocalLogTrace   : [cb94011b] |-->OrderService.orderItem()
+h.s.trace.logtrace.ThreadLocalLogTrace   : [cb94011b] |   |-->OrderRepository.save()
+h.s.trace.logtrace.ThreadLocalLogTrace   : [cb94011b] |   |<--OrderRepository.save() time = 1004ms
+h.s.trace.logtrace.ThreadLocalLogTrace   : [cb94011b] |<--OrderService.orderItem() time = 1004ms
+h.s.trace.logtrace.ThreadLocalLogTrace   : [cb94011b] OrderController.request() time = 1006ms
+```
+
 ## 템플릿 메서드 패턴 - 적용 2
 
 ## 템플릿 메서드 패턴 - 정의
